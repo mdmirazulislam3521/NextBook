@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NextBook Admin Panel</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:Arial;background:#111;color:#fff;padding:10px}
+.box{background:#222;padding:10px;margin:10px 0;border-radius:6px}
+button{margin:4px}
+</style>
+</head>
+<body>
+
+<h2>👑 NextBook Admin Panel</h2>
+
+<div class="box">
+<button onclick="loadUsers()">👤 View Users</button>
+<button onclick="loadPayments()">💳 Payment Requests</button>
+<button onclick="loadAds()">📢 Ads Requests</button>
+<button onclick="loadPosts()">🗑 Posts</button>
+</div>
+
+<div id="output"></div>
+
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getFirestore,collection,getDocs,deleteDoc,doc,updateDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyDYPJ4xZ8wx3KL7aVbji9A9KUWOYozKW-k",
+ authDomain:"nextbook-78b81.firebaseapp.com",
+ projectId:"nextbook-78b81"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+const ADMIN_UID="ySYqhb67PlYQwagFye4mwulCG493";
+
+/* USERS */
+window.loadUsers=async()=>{
+ output.innerHTML="<h3>Users</h3>";
+ const snap=await getDocs(collection(db,"users"));
+ snap.forEach(d=>{
+  output.innerHTML+=`<div class="box">
+   UID: ${d.id}<br>
+   Name: ${d.data().name || ""}
+  </div>`;
+ });
+};
+
+/* PAYMENTS */
+window.loadPayments=async()=>{
+ output.innerHTML="<h3>Payments</h3>";
+ const snap=await getDocs(collection(db,"payments"));
+ snap.forEach(d=>{
+  output.innerHTML+=`<div class="box">
+   ${d.data().method} - ৳${d.data().amount}
+  </div>`;
+ });
+};
+
+/* ADS */
+window.loadAds=async()=>{
+ output.innerHTML="<h3>Ads</h3>";
+ const snap=await getDocs(collection(db,"ads"));
+ snap.forEach(d=>{
+  output.innerHTML+=`<div class="box">
+   ${d.data().text}
+  </div>`;
+ });
+};
+
+/* POSTS */
+window.loadPosts=async()=>{
+ output.innerHTML="<h3>Posts</h3>";
+ const snap=await getDocs(collection(db,"posts"));
+ snap.forEach(d=>{
+  output.innerHTML+=`<div class="box">
+   ${d.data().text}
+   <button onclick="delPost('${d.id}')">Delete</button>
+  </div>`;
+ });
+};
+
+window.delPost=async(id)=>{
+ await deleteDoc(doc(db,"posts",id));
+ alert("Deleted");
+};
+</script>
+</body>
+</html>
