@@ -10,14 +10,14 @@
 
 <h3>Signup</h3>
 <input id="signupEmail" placeholder="Email">
-<input id="signupPassword" type="password" placeholder="Password">
+<input id="signupPassword" type="password">
 <button onclick="signup()">Create Account</button>
 
 <hr>
 
 <h3>Login</h3>
 <input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
+<input id="password" type="password">
 <button onclick="login()">Login</button>
 
 <hr>
@@ -35,6 +35,9 @@
 <div id="posts"></div>
 
 <script type="module">
+  // 👑 ADMIN UID
+  const ADMIN_UID = "ySYqhb67PlYQwagFye4mwulCG493";
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import {
     getAuth,
@@ -47,6 +50,8 @@
     collection,
     addDoc,
     getDocs,
+    deleteDoc,
+    doc,
     query,
     orderBy,
     serverTimestamp
@@ -65,24 +70,27 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  // Signup
   window.signup = async () => {
     await createUserWithEmailAndPassword(
       auth,
       signupEmail.value,
       signupPassword.value
     );
-    alert("Account created");
+    alert("Account created ✅");
   };
 
+  // Login
   window.login = async () => {
     await signInWithEmailAndPassword(
       auth,
       email.value,
       password.value
     );
-    alert("Login success");
+    alert("Login success ✅");
   };
 
+  // Add Post
   window.addPost = async () => {
     if (!auth.currentUser) {
       alert("Login required");
@@ -101,22 +109,47 @@
     loadPosts();
   };
 
+  // Delete Post (ADMIN ONLY)
+  window.deletePost = async (postId) => {
+    if (auth.currentUser.uid !== ADMIN_UID) {
+      alert("Not allowed");
+      return;
+    }
+    await deleteDoc(doc(db, "posts", postId));
+    loadPosts();
+  };
+
+  // Load Posts
   async function loadPosts() {
     posts.innerHTML = "";
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
 
     snap.forEach(d => {
-      posts.innerHTML += `
-        <h4>${d.data().title}</h4>
-        <p>${d.data().content}</p>
-        <hr>
+      const data = d.data();
+      let html = `
+        <h4>${data.title}</h4>
+        <p>${data.content}</p>
       `;
+
+      // 👑 Admin delete button
+      if (auth.currentUser && auth.currentUser.uid === ADMIN_UID) {
+        html += `<button onclick="deletePost('${d.id}')">🗑 Delete</button>`;
+      }
+
+      html += `<hr>`;
+      posts.innerHTML += html;
     });
   }
 
+  // Auth check
   onAuthStateChanged(auth, user => {
-    if (user) loadPosts();
+    if (user) {
+      if (user.uid === ADMIN_UID) {
+        alert("Welcome Admin 👑");
+      }
+      loadPosts();
+    }
   });
 </script>
 
