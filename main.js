@@ -103,3 +103,7 @@ async function loadPosts() {
     postsDiv.appendChild(div);
   });
 }
+window.login = login;
+window.signup = signup;
+window.logout = logout;
+window.addPost = addPost;
