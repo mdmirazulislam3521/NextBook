@@ -1,31 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>NextBook</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 </head>
 <body>
 
 <h2>NextBook</h2>
 
-<!-- Login -->
-<input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Password">
+<h3>Signup</h3>
+<input id="signupEmail" placeholder="Email">
+<input id="signupPassword" type="password" placeholder="Password">
+<button onclick="signup()">Create Account</button>
+
+<hr>
+
+<h3>Login</h3>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
 <button onclick="login()">Login</button>
 
 <hr>
 
-<!-- Post -->
-<input type="text" id="title" placeholder="Post title">
+<h3>Create Post</h3>
+<input id="title" placeholder="Post title">
+<br><br>
 <textarea id="content" placeholder="Post content"></textarea>
-<button onclick="addPost()">Add Post</button>
+<br><br>
+<button onclick="addPost()">Post</button>
 
 <hr>
 
 <h3>All Posts</h3>
 <div id="posts"></div>
 
-<script type="module" src="main.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDYPJ4xZ8wx3KL7aVbji9A9KUWOYozKW-k",
+    authDomain: "nextbook-78b81.firebaseapp.com",
+    projectId: "nextbook-78b81",
+    storageBucket: "nextbook-78b81.appspot.com",
+    messagingSenderId: "1022007364860",
+    appId: "1:1022007364860:web:884e9d153221494e575b79"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.signup = async () => {
+    await createUserWithEmailAndPassword(
+      auth,
+      signupEmail.value,
+      signupPassword.value
+    );
+    alert("Account created");
+  };
+
+  window.login = async () => {
+    await signInWithEmailAndPassword(
+      auth,
+      email.value,
+      password.value
+    );
+    alert("Login success");
+  };
+
+  window.addPost = async () => {
+    if (!auth.currentUser) {
+      alert("Login required");
+      return;
+    }
+
+    await addDoc(collection(db, "posts"), {
+      title: title.value,
+      content: content.value,
+      userId: auth.currentUser.uid,
+      createdAt: serverTimestamp()
+    });
+
+    title.value = "";
+    content.value = "";
+    loadPosts();
+  };
+
+  async function loadPosts() {
+    posts.innerHTML = "";
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+
+    snap.forEach(d => {
+      posts.innerHTML += `
+        <h4>${d.data().title}</h4>
+        <p>${d.data().content}</p>
+        <hr>
+      `;
+    });
+  }
+
+  onAuthStateChanged(auth, user => {
+    if (user) loadPosts();
+  });
+</script>
+
 </body>
 </html>
