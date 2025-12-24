@@ -1,157 +1,160 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>NextBook</title>
+<meta charset="UTF-8">
+<title>NextBook Super Platform</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{font-family:Arial;background:#eef;padding:8px}
+.box{background:#fff;padding:8px;margin:8px 0;border-radius:6px}
+input,textarea,select{width:100%;margin:4px 0}
+button{margin:3px}
+.admin{color:red;font-weight:bold}
+</style>
 </head>
 <body>
 
-<h2>NextBook</h2>
+<h2>🚀 NextBook – Social + Commerce + AppStore</h2>
 
-<h3>Signup</h3>
-<input id="signupEmail" placeholder="Email">
-<input id="signupPassword" type="password">
-<button onclick="signup()">Create Account</button>
-
-<hr>
-
-<h3>Login</h3>
+<!-- AUTH -->
+<div class="box">
 <input id="email" placeholder="Email">
-<input id="password" type="password">
+<input id="password" type="password" placeholder="Password">
+<button onclick="signup()">Signup</button>
 <button onclick="login()">Login</button>
+<button onclick="logout()">Logout</button>
+</div>
 
-<hr>
-
-<h3>Create Post</h3>
-<input id="title" placeholder="Post title">
-<br><br>
-<textarea id="content" placeholder="Post content"></textarea>
-<br><br>
+<!-- POST -->
+<div class="box">
+<textarea id="postText" placeholder="Write post"></textarea>
+<input id="videoUrl" placeholder="Video URL (YouTube / mp4)">
 <button onclick="addPost()">Post</button>
+</div>
 
-<hr>
+<!-- PAYMENT -->
+<div class="box">
+<h4>💳 Payment (Demo)</h4>
+<select id="payMethod">
+<option>bKash</option>
+<option>Nagad</option>
+<option>Rocket</option>
+</select>
+<input id="amount" placeholder="Amount">
+<button onclick="pay()">Pay</button>
+</div>
 
-<h3>All Posts</h3>
-<div id="posts"></div>
+<!-- APP STORE -->
+<div class="box">
+<h4>📱 App Store (Like Google Play)</h4>
+<input id="appName" placeholder="App Name">
+<input id="appLink" placeholder="App URL">
+<button onclick="uploadApp()">Upload App</button>
+</div>
+
+<!-- SUB ADMIN -->
+<div class="box">
+<h4 class="admin">👑 Sub-Admin Rent</h4>
+<select id="role">
+<option>User</option>
+<option>Sub-Admin</option>
+</select>
+<button onclick="upgradeRole()">Upgrade Role</button>
+</div>
+
+<div id="feed"></div>
 
 <script type="module">
-  // 👑 ADMIN UID
-  const ADMIN_UID = "ySYqhb67PlYQwagFye4mwulCG493";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,collection,addDoc,getDocs,doc,setDoc,updateDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import {
-    getAuth,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    getDocs,
-    deleteDoc,
-    doc,
-    query,
-    orderBy,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const firebaseConfig={
+ apiKey:"AIzaSyDYPJ4xZ8wx3KL7aVbji9A9KUWOYozKW-k",
+ authDomain:"nextbook-78b81.firebaseapp.com",
+ projectId:"nextbook-78b81",
+ storageBucket:"nextbook-78b81.firebasestorage.app",
+ messagingSenderId:"1022007364860",
+ appId:"1:1022007364860:web:884e9d153221494e575b79"
+};
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDYPJ4xZ8wx3KL7aVbji9A9KUWOYozKW-k",
-    authDomain: "nextbook-78b81.firebaseapp.com",
-    projectId: "nextbook-78b81",
-    storageBucket: "nextbook-78b81.appspot.com",
-    messagingSenderId: "1022007364860",
-    appId: "1:1022007364860:web:884e9d153221494e575b79"
-  };
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+/* AUTH */
+window.signup=()=>createUserWithEmailAndPassword(auth,email.value,password.value);
+window.login=()=>signInWithEmailAndPassword(auth,email.value,password.value);
+window.logout=()=>signOut(auth);
 
-  // Signup
-  window.signup = async () => {
-    await createUserWithEmailAndPassword(
-      auth,
-      signupEmail.value,
-      signupPassword.value
-    );
-    alert("Account created ✅");
-  };
+/* POST + VIDEO */
+window.addPost=async()=>{
+ await addDoc(collection(db,"posts"),{
+  text:postText.value,
+  video:videoUrl.value,
+  user:auth.currentUser.uid,
+  time:serverTimestamp()
+ });
+ postText.value=""; videoUrl.value="";
+ load();
+};
 
-  // Login
-  window.login = async () => {
-    await signInWithEmailAndPassword(
-      auth,
-      email.value,
-      password.value
-    );
-    alert("Login success ✅");
-  };
+/* PAYMENT (DEMO LOG) */
+window.pay=async()=>{
+ await addDoc(collection(db,"payments"),{
+  user:auth.currentUser.uid,
+  method:payMethod.value,
+  amount:amount.value,
+  time:serverTimestamp()
+ });
+ alert("Payment Request Sent (Demo)");
+ amount.value="";
+};
 
-  // Add Post
-  window.addPost = async () => {
-    if (!auth.currentUser) {
-      alert("Login required");
-      return;
-    }
+/* APP STORE */
+window.uploadApp=async()=>{
+ await addDoc(collection(db,"apps"),{
+  name:appName.value,
+  link:appLink.value,
+  owner:auth.currentUser.uid
+ });
+ appName.value=""; appLink.value="";
+ load();
+};
 
-    await addDoc(collection(db, "posts"), {
-      title: title.value,
-      content: content.value,
-      userId: auth.currentUser.uid,
-      createdAt: serverTimestamp()
-    });
+/* SUB ADMIN */
+window.upgradeRole=async()=>{
+ await setDoc(doc(db,"roles",auth.currentUser.uid),{
+  role:role.value
+ });
+ alert("Role Updated");
+};
 
-    title.value = "";
-    content.value = "";
-    loadPosts();
-  };
+/* LOAD */
+async function load(){
+ feed.innerHTML="";
 
-  // Delete Post (ADMIN ONLY)
-  window.deletePost = async (postId) => {
-    if (auth.currentUser.uid !== ADMIN_UID) {
-      alert("Not allowed");
-      return;
-    }
-    await deleteDoc(doc(db, "posts", postId));
-    loadPosts();
-  };
+ const posts=await getDocs(collection(db,"posts"));
+ posts.forEach(d=>{
+  const p=d.data();
+  feed.innerHTML+=`
+  <div class="box">
+   <p>${p.text}</p>
+   ${p.video ? `<iframe width="100%" src="${p.video}"></iframe>` : ""}
+  </div>`;
+ });
 
-  // Load Posts
-  async function loadPosts() {
-    posts.innerHTML = "";
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
+ const apps=await getDocs(collection(db,"apps"));
+ apps.forEach(d=>{
+  const a=d.data();
+  feed.innerHTML+=`
+  <div class="box">
+   📱 ${a.name} <a href="${a.link}" target="_blank">Open</a>
+  </div>`;
+ });
+}
 
-    snap.forEach(d => {
-      const data = d.data();
-      let html = `
-        <h4>${data.title}</h4>
-        <p>${data.content}</p>
-      `;
-
-      // 👑 Admin delete button
-      if (auth.currentUser && auth.currentUser.uid === ADMIN_UID) {
-        html += `<button onclick="deletePost('${d.id}')">🗑 Delete</button>`;
-      }
-
-      html += `<hr>`;
-      posts.innerHTML += html;
-    });
-  }
-
-  // Auth check
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      if (user.uid === ADMIN_UID) {
-        alert("Welcome Admin 👑");
-      }
-      loadPosts();
-    }
-  });
+onAuthStateChanged(auth,load);
 </script>
-
 </body>
 </html>
